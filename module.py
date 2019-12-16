@@ -6,11 +6,6 @@ import time
 import textwrap
 from threading import Event, Thread
 
-#try:
-#    import queue as Queue
-#except ImportError:
-#    import Queue
-
 from mgr_module import MgrModule
 
 from geopy.geocoders import Nominatim   
@@ -19,30 +14,6 @@ from geopy.distance import geodesic
 # https://pythonhosted.org/python-geoip/
 # https://pypi.org/project/geopy/
 # https://github.com/maxmind/GeoIP2-python
-# will need to import geoip modules probably
-# create some kind of test harness commands 
-# so we can say something like 'test region SOMREGION' 
-# and trigger whatever code path would be triggered by high traffic from that region
-
-  # OR...could we use the geoip database to automatically decide whether clients are proximate to the storage?
-        # We know the IP of storage elements, if we have some fuzzy association (regional level) then
-        # the module could simply calculate that all the storage for a pool is in one region and all the 
-        # storage for a given cache crush bucket is another region...
-
-        # TODO:  
-        # - Determine which clients are accessing which pools from info available to mgr
-        # - Determine the crush rule for any given pool
-        # - We need to know the pool to overlay with cache tier, and what crush rule to use for the tier.  
-        # - To know the right crush rule we need to have an association of crush bucket to ip location
-
-        # arguments sample
-        #'cmd': 'fs subvolumegroup create '
-        # 'name=vol_name,type=CephString '
-        # 'name=group_name,type=CephString '
-        # 'name=pool_layout,type=CephString,req=false '
-        # 'name=mode,type=CephString,req=false ',
-
-# log = logging.getLogger(__name__)
 
 class Module(MgrModule):
     COMMANDS = [
@@ -499,16 +470,6 @@ class Module(MgrModule):
         self.log.info("poll_traffic: storing new changes to cache status")
         self.store('cache_active', stored_active)
 
-
-# ' while running on mgr.um-testmon01: string indices must be integers
-# 2019-11-19 13:35:36.540 7fbc79c05700 -1 cachetier.serve:
-# 2019-11-19 13:35:36.540 7fbc79c05700 -1 Traceback (most recent call last):
-#   File "/usr/share/ceph/mgr/cachetier/module.py", line 202, in serve
-#     self.poll_traffic()
-#   File "/usr/share/ceph/mgr/cachetier/module.py", line 454, in poll_traffic
-#     if cache_info['state'] == 'active' and (time.time() - cache_info['timestamp'] > self.cooldown):
-# TypeError: string indices must be integers
-
     def manage_cache(self):
         self.log.info("manage_cache: starting loop through status object")
         
@@ -678,18 +639,6 @@ class Module(MgrModule):
 
         return True
 
-
-
-#  "name=var,type=CephChoices,strings=size|min_size|pg_num|pgp_num|pgp_num_actual|crush_rule|hashpspool|nodelete|nopgchange|nosizechange|write_fadvise_dontneed|noscrub|nodeep-scrub|hit_set_type|hit_set_period|hit_set_count|hit_set_fpp|use_gmt_hitset|target_max_bytes|target_max_objects|cache_target_dirty_ratio|cache_target_dirty_high_ratio|cache_target_full_ratio|cache_min_flush_age|cache_min_evict_age|min_read_recency_for_promote|min_write_recency_for_promote|fast_read|hit_set_grade_decay_rate|hit_set_search_last_n|scrub_min_interval|scrub_max_interval|deep_scrub_interval|recovery_priority|recovery_op_priority|scrub_priority|compression_mode|compression_algorithm|compression_required_ratio|compression_max_blob_size|compression_min_blob_size|csum_type|csum_min_block|csum_max_block|allow_ec_overwrites|fingerprint_algorithm|pg_autoscale_mode|pg_autoscale_bias|pg_num_min|target_size_bytes|target_size_ratio " \
-#      "name=val,type=CephString " \
-#      "name=yes_i_really_mean_it,type=CephBool,req=false", \
-#      "set pool parameter <var> to <val>", "osd", "rw")
-#ceph osd pool create cou.VAI.fs.cache 512 512 replicated vai-cache
-#ceph osd tier add cou.VAI.fs cou.VAI.fs.cache
-#ceph osd tier cache-mode cou.VAI.fs.cache writeback
-#ceph osd tier set-overlay cou.VAI.fs cou.VAI.fs.cache
-#ceph osd pool set cou.VAI.fs.cache hit_set_type bloom
-
     # run in background thread to flush cache
     def flush_cache(self,pool_name):
         self.log.info("flush_cache: pool {}".format(pool_name))
@@ -789,22 +738,3 @@ class Module(MgrModule):
         #cmd['pool_name']
 
 
-# send command
-
-# result = CommandResult("")
-#                     self.send_command(result, "mon", "", json.dumps({
-#                         "prefix": "osd pool set",
-#                         "format": "json",
-#                         "pool": pool_name,
-#                         'var': 'size',
-#                         "val": str(num_rep),
-#                     }), "")
-#                     r, outb, outs = result.wait()
-
-        # sample pool object from osdmap.get_pools()
-        # {128L: {'cache_target_full_ratio_micro': 800000L, 'fast_read': False, 'stripe_width': 0L, 'flags_names': 'hashpspool', 'tier_of': -1L, 'hit_set_grade_decay_rate': 0L, 'pg_placement_num': 8L, 'use_gmt_hitset': True, 'last_force_op_resend_preluminous': '0', 'create_time': '2019-09-04 16:25:15.560679', 'quota_max_bytes': 0L, 'erasure_code_profile': '', 'pg_autoscale_mode': 'on', 'snap_seq': 0L, 'expected_num_objects': 0L, 'size': 3L, 'pg_num_pending': 8L, 'auid': 0L, 'cache_min_flush_age': 0L, 'hit_set_period': 0L, 'min_read_recency_for_promote': 0L, 'target_max_objects': 0L, 'pg_placement_num_target': 8L, 'pg_num': 8L, 'type': 1L, 'grade_table': [], 'pool_name': 'cou.Jetscape.rados', 'cache_min_evict_age': 0L, 'snap_mode': 'selfmanaged', 'pg_num_target': 8L, 'cache_mode': 'none', 'min_size': 2L, 'cache_target_dirty_high_ratio_micro': 600000L, 'object_hash': 2L, 'last_pg_merge_meta': {'ready_epoch': 0L, 'source_version': "0'0", 'source_pgid': '0.0', 'last_epoch_clean': 0L, 'target_version': "0'0", 'last_epoch_started': 0L}, 'write_tier': -1L, 'cache_target_dirty_ratio_micro': 400000L, 'pool': 128L, 'removed_snaps': '[]', 'crush_rule': 0L, 'tiers': [], 'hit_set_params': {'type': 'none'}, 'last_force_op_resend': '0', 'pool_snaps': [], 'quota_max_objects': 0L, 'last_force_op_resend_prenautilus': '0', 'application_metadata': {'rados': {}}, 'options': {}, 'hit_set_count': 0L, 'flags': 1L, 'target_max_bytes': 0L, 'snap_epoch': 0L, 'hit_set_search_last_n': 0L, 'last_change': '7056', 'min_write_recency_for_promote': 0L, 'read_tier': -1L}
-
-# sample crushmap dump get_crush()
-# 'rules': [{'min_size': 1L, 'rule_name': 'replicated_ruleset', 'steps': [{'item_name': 'default', 'item': -1L, 'op': 'take'}, {'num': 0L, 'type': 'host', 'op': 'chooseleaf_firstn'}, {'op': 'emit'}], 'ruleset': 0L, 'type': 1L, 'rule_id': 0L, 'max_size': 10L}, {'min_size': 1L, 'rule_name': 'ec-21-members', 'steps': [{'num': 5L, 'op': 'set_chooseleaf_tries'}, {'num': 100L, 'op': 'set_choose_tries'}, {'item_name': 'um', 'item': -5L, 'op': 'take'}, {'num': 1L, 'type': 'host', 'op': 'chooseleaf_firstn'}, {'op': 'emit'}, {'item_name': 'msu', 'item': -13L, 'op': 'take'}, {'num': 1L, 'type': 'host', 'op': 'chooseleaf_firstn'}, {'op': 'emit'}, {'item_name': 'wsu', 'item': -9L, 'op': 'take'}, {'num': 1L, 'type': 'host', 'op': 'chooseleaf_firstn'}, {'op': 'emit'}], 'ruleset': 2L, 'type': 3L, 'rule_id': 2L, 'max_size': 3L}], '
-
-# buckets': [{'hash': 'rjenkins1', 'name': 'default', 'weight': 4494L, 'type_id': 14L, 'alg': 'straw2', 'type_name': 'root', 'items': [{'id': -5L, 'weight': 1926L, 'pos': 0L}, {'id': -9L, 'weight': 1284L, 'pos': 1L}, {'id': -13L, 'weight': 1284L, 'pos': 2L}], 'id': -1L}, {'hash': 'rjenkins1', 'name': 'um-stor-test01', 'weight': 1926L, 'type_id': 7L, 'alg': 'straw2', 'type_name': 'host', 'items': [{'id': 0L, 'weight': 642L, 'pos': 0L}, {'id': 1L, 'weight': 642L, 'pos': 1L}, {'id': 6L, 'weight': 642L, 'pos': 2L}], 'id': -2L}, {'hash': 'rjenkins1', 'name': 'um-20W-A', 'weight': 1926L, 'type_id': 8L, 'alg': 'straw2', 'type_name': 'rack', 'items': [{'id': -2L, 'weight': 1926L, 'pos': 0L}], 'id': -3L}, {'hash': 'rjenkins1', 'name': 'um-macc', 'weight': 1926L, 'type_id': 11L, 'alg': 'straw2', 'type_name': 'building', 'items': [{'id': -3L, 'weight': 1926L, 'pos': 0L}], 'id': -4L}, {'hash': 'rjenkins1', 'name': 'um', 'weight': 1926L, 'type_id': 12L, 'alg': 'straw2', 'type_name': 'member', 'items': [{'id': -4L, 'weight': 1926L, 'pos': 0L}], 'id': -5L}, {'hash': 'rjenkins1', 'name': 'wsu-stor-test01', 'weight': 1284L, 'type_id': 7L, 'alg': 'straw2', 'type_name': 'host', 'items': [{'id': 10L, 'weight': 642L, 'pos': 0L}, {'id': 2L, 'weight': 642L, 'pos': 1L}], 'id': -6L}, {'hash': 'rjenkins1', 'name': 'wsu-304', 'weight': 1284L, 'type_id': 8L, 'alg': 'straw2', 'type_name': 'rack', 'items': [{'id': -6L, 'weight': 1284L, 'pos': 0L}], 'id': -7L}, {'hash
